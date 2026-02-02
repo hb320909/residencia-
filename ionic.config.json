@@ -1,0 +1,8 @@
+{
+  "name": "residencia",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite",
+  "id": "8b29fa63"
+}
