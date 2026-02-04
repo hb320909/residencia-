@@ -685,8 +685,13 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('loginError');
     
-    if (users[username] && users[username] === password) {
-        currentUser = username;
+    console.log('Login attempt:', username, password);
+    
+    const userKey = Object.keys(users).find(key => key.toLowerCase() === username.toLowerCase());
+    
+    if (userKey && users[userKey] === password) {
+        console.log('Login successful');
+        currentUser = userKey;
         document.getElementById('currentUser').textContent = `Bienvenido, ${username}`;
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
@@ -694,6 +699,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         showSection('dashboard');
         errorDiv.classList.add('hidden');
     } else {
+        console.log('Login failed');
         errorDiv.textContent = 'Usuario o contraseña incorrectos';
         errorDiv.classList.remove('hidden');
     }
