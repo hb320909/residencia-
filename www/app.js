@@ -6,6 +6,8 @@ let reports = []; // 'partes' disciplinarios
 let homeworks = {}; // { weekStartISO: { estudio1: 'text', estudio2: 'text', ... } }
 let currentUser = '';
 let currentSection = 'dashboard';
+let isOnline = navigator.onLine;
+let darkMode = localStorage.getItem('darkMode') === 'true';
 
 // User credentials
 const users = {
@@ -19,6 +21,476 @@ const users = {
     'Belen': 'star65',
     'Adolfo': 'king999'
 };
+
+// PWA Install Prompt
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show install prompt after 5 seconds if not dismissed before
+    setTimeout(() => {
+        if (!localStorage.getItem('installDismissed')) {
+            showInstallPrompt();
+        }
+    }, 5000);
+});
+
+function showInstallPrompt() {
+    const prompt = document.getElementById('installPrompt');
+    if (prompt) {
+        prompt.classList.add('show');
+    }
+}
+
+function hideInstallPrompt() {
+    const prompt = document.getElementById('installPrompt');
+    if (prompt) {
+        prompt.classList.remove('show');
+    }
+}
+
+// Install button handler
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'installBtn') {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    showToast('App instalada correctamente', 'success');
+                }
+                deferredPrompt = null;
+                hideInstallPrompt();
+            });
+        }
+    }
+    
+    if (e.target.id === 'dismissInstall') {
+        localStorage.setItem('installDismissed', 'true');
+        hideInstallPrompt();
+    }
+});
+
+// App installed event
+window.addEventListener('appinstalled', () => {
+    showToast('¡App instalada en tu dispositivo!', 'success');
+    hideInstallPrompt();
+});
+
+function checkOnlineStatus() {
+    const offlineIndicator = document.getElementById('offlineIndicator');
+    
+    window.addEventListener('online', () => {
+        isOnline = true;
+        if (offlineIndicator) {
+            offlineIndicator.classList.remove('show');
+        }
+        showToast('Conexión restaurada', 'success');
+        syncData();
+    });
+
+    window.addEventListener('offline', () => {
+        isOnline = false;
+        if (offlineIndicator) {
+            offlineIndicator.classList.add('show');
+        }
+        showToast('Sin conexión - Modo offline activado', 'warning');
+    });
+}
+
+function syncData() {
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+        navigator.serviceWorker.ready.then(registration => {
+            registration.sync.register('background-save');
+        });
+    }
+}
+
+// Toast notifications
+function showToast(message, type = 'info', duration = 3000) {
+    const toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'fixed top-4 right-4 z-50 space-y-2';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type} fade-in`;
+    toast.innerHTML = `
+        <div class="flex items-center gap-3">
+            <i class="fas ${getToastIcon(type)}"></i>
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-white/70 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+
+    document.getElementById('toastContainer').appendChild(toast);
+
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, duration);
+}
+
+function getToastIcon(type) {
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+    return icons[type] || icons.info;
+}
+
+// Loading states
+function showLoading(button) {
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    button.disabled = true;
+
+    return () => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    };
+}
+
+// Form validation
+function validateForm(formData, rules) {
+    const errors = [];
+
+    for (const [field, value] of Object.entries(formData)) {
+        const fieldRules = rules[field];
+        if (!fieldRules) continue;
+
+        // Required validation
+        if (fieldRules.required && (!value || value.toString().trim() === '')) {
+            errors.push(`${fieldRules.label || field} es obligatorio`);
+            continue;
+        }
+
+        // Min length validation
+        if (fieldRules.minLength && value && value.length < fieldRules.minLength) {
+            errors.push(`${fieldRules.label || field} debe tener al menos ${fieldRules.minLength} caracteres`);
+        }
+
+        // Email validation
+        if (fieldRules.email && value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+                errors.push(`${fieldRules.label || field} debe ser un email válido`);
+            }
+        }
+
+        // Phone validation
+        if (fieldRules.phone && value) {
+            const phoneRegex = /^[\+]?[0-9\s\-\(\)]{9,}$/;
+            if (!phoneRegex.test(value)) {
+                errors.push(`${fieldRules.label || field} debe ser un teléfono válido`);
+            }
+        }
+
+        // Date validation
+        if (fieldRules.date && value) {
+            const date = new Date(value);
+            if (isNaN(date.getTime())) {
+                errors.push(`${fieldRules.label || field} debe ser una fecha válida`);
+            }
+        }
+    }
+
+    return errors;
+}
+
+// Dark mode functionality
+function toggleDarkMode() {
+    darkMode = !darkMode;
+    localStorage.setItem('darkMode', darkMode);
+    applyTheme();
+    showToast(`Modo ${darkMode ? 'oscuro' : 'claro'} activado`, 'info');
+}
+
+function applyTheme() {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+}
+
+// Search functionality
+function setupSearch() {
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Buscar alumnos...';
+    searchInput.className = 'form-input mb-4';
+    searchInput.id = 'globalSearch';
+
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'mb-6';
+    searchContainer.innerHTML = `
+        <div class="flex gap-4 items-center">
+            <div class="flex-1">
+                <input type="text" id="globalSearch" placeholder="Buscar alumnos..." class="form-input">
+            </div>
+            <button id="toggleDarkMode" class="btn btn-secondary" title="Cambiar tema">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    `;
+
+    // Insert search bar after navigation
+    const nav = document.querySelector('nav');
+    if (nav) {
+        nav.insertAdjacentElement('afterend', searchContainer);
+    }
+
+    // Search functionality
+    document.getElementById('globalSearch').addEventListener('input', debounce(searchStudents, 300));
+    document.getElementById('toggleDarkMode').addEventListener('click', toggleDarkMode);
+}
+
+function searchStudents(event) {
+    const query = event.target.value.toLowerCase().trim();
+    const studentCards = document.querySelectorAll('#studentsTableBody tr');
+
+    if (!query) {
+        studentCards.forEach(card => card.style.display = '');
+        return;
+    }
+
+    studentCards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? '' : 'none';
+    });
+}
+
+// Debounce utility
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Export/Import data
+function exportData() {
+    const data = {
+        students,
+        rooms,
+        absences,
+        reports,
+        homeworks,
+        exportDate: new Date().toISOString(),
+        version: '1.0.0'
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `residencia-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Datos exportados correctamente', 'success');
+}
+
+function importData(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            if (confirm('¿Estás seguro de importar estos datos? Se reemplazarán los datos actuales.')) {
+                students = data.students || [];
+                rooms = data.rooms || [];
+                absences = data.absences || [];
+                reports = data.reports || [];
+                homeworks = data.homeworks || {};
+
+                saveData();
+                updateDashboard();
+                updateStudentsTable();
+                updateRoomsGrid();
+                updateAbsencesTable();
+                updateReportsTable();
+                populateDropdowns();
+                loadHomeworks();
+                renderAgenda();
+
+                showToast('Datos importados correctamente', 'success');
+            }
+        } catch (error) {
+            showToast('Error al importar datos: archivo inválido', 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+// Enhanced activity logging with persistence
+function addActivity(activity, type = 'info') {
+    const actividadDiv = document.getElementById('actividadReciente');
+    if (!actividadDiv) return;
+
+    const now = new Date();
+    const timeString = now.toLocaleString('es-ES');
+
+    const activityData = {
+        id: Date.now(),
+        text: activity,
+        time: timeString,
+        type: type,
+        timestamp: now.getTime()
+    };
+
+    // Save to localStorage
+    const activities = JSON.parse(localStorage.getItem('activities') || '[]');
+    activities.unshift(activityData);
+    activities.splice(50); // Keep only last 50 activities
+    localStorage.setItem('activities', JSON.stringify(activities));
+
+    // Update UI
+    updateActivityLog();
+}
+
+function updateActivityLog() {
+    const actividadDiv = document.getElementById('actividadReciente');
+    if (!actividadDiv) return;
+
+    const activities = JSON.parse(localStorage.getItem('activities') || '[]');
+
+    if (activities.length === 0) {
+        actividadDiv.innerHTML = '<div class="activity-item"><i class="fas fa-info-circle"></i><div class="content"><p>No hay actividad reciente</p></div></div>';
+        return;
+    }
+
+    actividadDiv.innerHTML = activities.slice(0, 10).map(activity => `
+        <div class="activity-item">
+            <i class="fas ${getActivityIcon(activity.type)}"></i>
+            <div class="content">
+                <p>${activity.text}</p>
+                <span class="time">${activity.time}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function getActivityIcon(type) {
+    const icons = {
+        success: 'fa-check-circle text-success',
+        error: 'fa-exclamation-circle text-danger',
+        warning: 'fa-exclamation-triangle text-warning',
+        info: 'fa-info-circle text-primary'
+    };
+    return icons[type] || icons.info;
+}
+
+// Enhanced birthday notifications
+function checkBirthdays() {
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentDay = today.getDate();
+
+    const birthdayStudents = students.filter(student => {
+        if (!student.fechaNacimiento) return false;
+        const birth = new Date(student.fechaNacimiento);
+        return birth.getMonth() + 1 === currentMonth && birth.getDate() === currentDay;
+    });
+
+    if (birthdayStudents.length > 0) {
+        showBirthdayModal(birthdayStudents);
+    }
+}
+
+// Enhanced birthday modal with better animations
+function showBirthdayModal(students) {
+    const existingModal = document.getElementById('birthdayModal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'birthdayModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="text-center">
+                <div class="text-6xl mb-4">🎂</div>
+                <h3 class="text-2xl font-bold mb-4 text-primary">¡Feliz Cumpleaños!</h3>
+                <p class="text-lg mb-6">
+                    ${students.length === 1
+                        ? `¡Hoy es el cumpleaños de ${students[0].nombre}!`
+                        : `¡Hoy celebramos los cumpleaños de ${students.map(s => s.nombre).join(' y ')}!`
+                    }
+                </p>
+                <button onclick="closeBirthdayModal()" class="btn btn-primary btn-full">
+                    <i class="fas fa-gift"></i>
+                    ¡Felicitar!
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Create enhanced confetti animation
+    createConfetti();
+
+    // Auto-close after 8 seconds
+    setTimeout(() => {
+        if (modal.parentElement) {
+            closeBirthdayModal();
+        }
+    }, 8000);
+}
+
+function closeBirthdayModal() {
+    const modal = document.getElementById('birthdayModal');
+    if (modal) {
+        modal.classList.add('fade-out');
+        setTimeout(() => modal.remove(), 300);
+    }
+}
+
+// Enhanced confetti with better performance
+function createConfetti() {
+    const container = document.getElementById('confettiContainer') || document.createElement('div');
+    container.id = 'confettiContainer';
+    container.className = 'fixed inset-0 pointer-events-none z-40';
+    document.body.appendChild(container);
+
+    // Clear previous confetti
+    container.innerHTML = '';
+
+    const confettiPieces = 100;
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#FF9FF3'];
+
+    for (let i = 0; i < confettiPieces; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'absolute w-2 h-2 rounded-full animate-bounce';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+
+        container.appendChild(confetti);
+
+        // Remove confetti after animation
+        setTimeout(() => {
+            if (confetti.parentElement) {
+                confetti.remove();
+            }
+        }, 5000);
+    }
+}
 
 // Initialize rooms
 function initializeRooms() {
@@ -1377,6 +1849,58 @@ if (document.getElementById('reportDate')) {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    // Load data on page load
+    // Register service worker for PWA functionality
+    registerServiceWorker();
+
+    // Check online status
+    checkOnlineStatus();
+
+    // Apply theme
+    applyTheme();
+
+    // Load data
     loadData();
+
+    // Setup search functionality
+    setupSearch();
+
+    // Load activities
+    updateActivityLog();
+
+    // Set default dates
+    document.getElementById('absenceDate').valueAsDate = new Date();
+    if (document.getElementById('reportDate')) {
+        document.getElementById('reportDate').valueAsDate = new Date();
+    }
+
+    // Add export/import buttons to dashboard
+    addDataManagementButtons();
+
+    // Show welcome message
+    setTimeout(() => {
+        showToast('¡Bienvenido a la Residencia Escolar!', 'success');
+    }, 1000);
 });
+
+// Add data management buttons
+function addDataManagementButtons() {
+    const dashboard = document.getElementById('dashboard');
+    if (!dashboard) return;
+
+    const dataButtons = document.createElement('div');
+    dataButtons.className = 'mt-6 flex gap-4';
+    dataButtons.innerHTML = `
+        <button onclick="exportData()" class="btn btn-secondary">
+            <i class="fas fa-download"></i>
+            Exportar Datos
+        </button>
+        <label class="btn btn-secondary cursor-pointer">
+            <i class="fas fa-upload"></i>
+            Importar Datos
+            <input type="file" accept=".json" onchange="importData(this.files[0])" class="hidden">
+        </label>
+    `;
+
+    const activitySection = dashboard.querySelector('#actividadReciente').parentElement;
+    activitySection.insertAdjacentElement('afterend', dataButtons);
+}

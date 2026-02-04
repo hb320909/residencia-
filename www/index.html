@@ -16,12 +16,12 @@
     
     <link rel="manifest" href="/manifest.json" />
     
-    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Residencia Escolar" />
     
-    <!-- add to homescreen for ios -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Residencia Escolar Portal" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
     
     <link rel="stylesheet" href="/styles.css" />
     
@@ -455,6 +455,26 @@
 
       <!-- Confetti Container -->
       <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-40"></div>
+      
+      <!-- Offline Indicator -->
+      <div id="offlineIndicator" class="offline-indicator">
+        <i class="fas fa-wifi-slash"></i>
+        Sin conexión - Funcionando en modo offline
+      </div>
+      
+      <!-- PWA Install Prompt -->
+      <div id="installPrompt" class="card">
+        <div class="flex items-center justify-between">
+          <div>
+            <h4 class="font-semibold">Instalar App</h4>
+            <p class="text-sm text-secondary">Instala la app para acceder más rápido</p>
+          </div>
+          <div class="flex gap-2">
+            <button id="installBtn" class="btn btn-primary">Instalar</button>
+            <button id="dismissInstall" class="btn btn-secondary">Después</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="/app.js"></script>
