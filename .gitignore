@@ -7,7 +7,7 @@ yarn-error.log*
 # Build outputs
 dist/
 build/
-www/
+# www/  # Temporarily commented out to include the app files
 
 # Capacitor
 android/app/src/main/assets/public/
