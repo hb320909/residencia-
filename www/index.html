@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Residencia Escolar Portal</title>
+    
+    <base href="/" />
+    
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="viewport"
+      content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <link rel="manifest" href="/manifest.json" />
+    
+    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    
+    <!-- add to homescreen for ios -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Residencia Escolar Portal" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100">
+      <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">Iniciar Sesión</h2>
+        <form id="loginForm">
+          <div class="mb-4">
+            <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Usuario:</label>
+            <input type="text" id="username" name="username" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+          </div>
+          <div class="mb-6">
+            <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
+            <input type="password" id="password" name="password" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline">
+          </div>
+          <div id="loginError" class="text-red-500 text-sm mb-4 hidden">Usuario o contraseña incorrectos</div>
+          <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
+            Iniciar Sesión
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden">
+      <!-- Header -->
+      <header class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+          <h1 class="text-xl font-bold">Residencia Escolar Portal</h1>
+          <button id="logoutBtn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            Cerrar Sesión
+          </button>
+        </div>
+      </header>
+
+      <!-- Navigation -->
+      <nav class="bg-blue-500 text-white p-4">
+        <div class="container mx-auto">
+          <div class="flex space-x-4 mb-4">
+            <a href="#" class="nav-link" data-section="dashboard">Dashboard</a>
+            <a href="#" class="nav-link" data-section="students">Alumnos</a>
+            <a href="#" class="nav-link" data-section="rooms">Habitaciones</a>
+            <a href="#" class="nav-link" data-section="absences">Faltas</a>
+            <a href="#" class="nav-link" data-section="reports">Partes</a>
+            <a href="#" class="nav-link" data-section="seguimiento">Seguimiento</a>
+            <a href="#" class="nav-link" data-section="agenda">Agenda</a>
+          </div>
+          <select id="mobileNav" class="bg-blue-700 text-white p-2 rounded">
+            <option value="dashboard">Dashboard</option>
+            <option value="students">Alumnos</option>
+            <option value="rooms">Habitaciones</option>
+            <option value="absences">Faltas</option>
+            <option value="reports">Partes</option>
+            <option value="seguimiento">Seguimiento</option>
+            <option value="agenda">Agenda</option>
+          </select>
+        </div>
+      </nav>
+
+      <!-- Content Sections -->
+      <main class="container mx-auto p-4">
+        <!-- Dashboard -->
+        <section id="dashboard" class="content-section">
+          <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold">Total Alumnos</h3>
+              <p id="totalAlumnos" class="text-3xl font-bold text-blue-600">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold">Habitaciones Ocupadas</h3>
+              <p id="habitacionesOcupadas" class="text-3xl font-bold text-green-600">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow">
+              <h3 class="text-lg font-semibold">Total Faltas</h3>
+              <p id="totalFaltas" class="text-3xl font-bold text-red-600">0</p>
+            </div>
+          </div>
+          <div id="actividadReciente" class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-2">Actividad Reciente</h3>
+            <div class="space-y-2"></div>
+          </div>
+        </section>
+
+        <!-- Students -->
+        <section id="students" class="content-section hidden">
+          <h2 class="text-2xl font-bold mb-4">Gestión de Alumnos</h2>
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">Añadir Alumno</h3>
+            <form id="addStudentForm">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="studentNombre" placeholder="Nombre" required class="border p-2 rounded">
+                <input type="date" id="studentNacimiento" required class="border p-2 rounded">
+                <select id="studentGenero" required class="border p-2 rounded">
+                  <option value="">Género</option>
+                  <option value="hombre">Hombre</option>
+                  <option value="mujer">Mujer</option>
+                  <option value="otro">Otro</option>
+                </select>
+                <input type="text" id="studentCurso" placeholder="Curso" required class="border p-2 rounded">
+                <input type="tel" id="studentTelefono1" placeholder="Teléfono 1" required class="border p-2 rounded">
+                <input type="tel" id="studentTelefono2" placeholder="Teléfono 2" class="border p-2 rounded">
+                <label class="flex items-center">
+                  <input type="checkbox" id="studentMayor16" class="mr-2">
+                  Mayor de 16 años
+                </label>
+              </div>
+              <button type="submit" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Añadir Alumno</button>
+            </form>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-4">Lista de Alumnos</h3>
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="text-left">Nombre</th>
+                  <th class="text-left">Edad</th>
+                  <th class="text-left">Género</th>
+                  <th class="text-left">Habitación</th>
+                  <th class="text-left">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="studentsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Rooms -->
+        <section id="rooms" class="content-section hidden">
+          <h2 class="text-2xl font-bold mb-4">Gestión de Habitaciones</h2>
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">Asignar Habitación</h3>
+            <form id="assignRoomForm">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <select id="roomStudent" required class="border p-2 rounded">
+                  <option value="">Seleccionar Alumno</option>
+                </select>
+                <select id="roomNumber" required class="border p-2 rounded">
+                  <option value="">Seleccionar Habitación</option>
+                </select>
+                <select id="roomBed" class="border p-2 rounded">
+                  <option value="">Seleccionar Cama</option>
+                </select>
+              </div>
+              <button type="submit" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Asignar</button>
+            </form>
+          </div>
+          <div id="roomsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- Absences -->
+        <section id="absences" class="content-section hidden">
+          <h2 class="text-2xl font-bold mb-4">Gestión de Faltas</h2>
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">Registrar Falta</h3>
+            <form id="addAbsenceForm">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <select id="absenceStudent" required class="border p-2 rounded">
+                  <option value="">Seleccionar Alumno</option>
+                </select>
+                <input type="date" id="absenceDate" required class="border p-2 rounded">
+                <input type="text" id="absenceDescription" placeholder="Descripción" required class="border p-2 rounded">
+              </div>
+              <button type="submit" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Registrar Falta</button>
+            </form>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">Filtros</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <select id="filterStudent" class="border p-2 rounded">
+                <option value="">Todos los alumnos</option>
+              </select>
+              <input type="date" id="filterDate" class="border p-2 rounded">
+              <button id="clearFilters" class="bg-gray-500 text-white px-4 py-2 rounded">Limpiar Filtros</button>
+            </div>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-4">Lista de Faltas</h3>
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="text-left">Alumno</th>
+                  <th class="text-left">Fecha</th>
+                  <th class="text-left">Descripción</th>
+                  <th class="text-left">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="absencesTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Reports -->
+        <section id="reports" class="content-section hidden">
+          <h2 class="text-2xl font-bold mb-4">Gestión de Partes</h2>
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">Registrar Parte</h3>
+            <form id="addReportForm">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <select id="reportStudent" required class="border p-2 rounded">
+                  <option value="">Seleccionar Alumno</option>
+                </select>
+                <input type="date" id="reportDate" required class="border p-2 rounded">
+                <select id="reportType" required class="border p-2 rounded">
+                  <option value="">Tipo</option>
+                  <option value="disciplinario">Disciplinario</option>
+                  <option value="academico">Académico</option>
+                  <option value="otro">Otro</option>
+                </select>
+                <input type="text" id="reportDescription" placeholder="Descripción" required class="border p-2 rounded">
+              </div>
+              <button type="submit" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Registrar Parte</button>
+            </form>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-4">Lista de Partes</h3>
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="text-left">Alumno</th>
+                  <th class="text-left">Fecha</th>
+                  <th class="text-left">Tipo</th>
+                  <th class="text-left">Descripción</th>
+                  <th class="text-left">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="reportsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Seguimiento -->
+        <section id="seguimiento" class="content-section hidden">
+          <h2 class="text-2xl font-bold mb-4">Seguimiento Académico</h2>
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <h3 class="text-lg font-semibold mb-4">Añadir Seguimiento</h3>
+            <form id="addSeguimientoForm">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <select id="seguimientoStudent" required class="border p-2 rounded">
+                  <option value="">Seleccionar Alumno</option>
+                </select>
+                <input type="date" id="seguimientoDate" required class="border p-2 rounded">
+              </div>
+              <div class="mt-4">
+                <textarea id="seguimientoNotes" placeholder="Notas del seguimiento" rows="4" class="w-full border p-2 rounded"></textarea>
+              </div>
+              <button type="submit" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Añadir Seguimiento</button>
+            </form>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-4">Resumen del Alumno</h3>
+            <select id="alumnoResumenSelect" class="border p-2 rounded mb-4">
+              <option value="">Seleccionar Alumno</option>
+            </select>
+            <div id="alumnoResumen"></div>
+          </div>
+        </section>
+
+        <!-- Agenda -->
+        <section id="agenda" class="content-section hidden">
+          <h2 class="text-2xl font-bold mb-4">Agenda de Deberes</h2>
+          <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <div class="flex justify-between items-center mb-4">
+              <button id="previousWeek" class="bg-blue-500 text-white px-4 py-2 rounded">Semana Anterior</button>
+              <h3 id="currentWeekDisplay" class="text-lg font-semibold">Semana Actual</h3>
+              <button id="nextWeek" class="bg-blue-500 text-white px-4 py-2 rounded">Semana Siguiente</button>
+              <button id="goToCurrentWeek" class="bg-green-500 text-white px-4 py-2 rounded">Ir a Hoy</button>
+            </div>
+            <div id="agendaContent"></div>
+          </div>
+          <button id="openReviewPanel" class="bg-purple-500 text-white px-4 py-2 rounded">Revisar Semanas Anteriores</button>
+        </section>
+      </main>
+
+      <!-- Birthday Modal -->
+      <div id="birthdayModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4">
+          <h3 class="text-xl font-bold mb-4">¡Feliz Cumpleaños!</h3>
+          <p id="birthdayMessage" class="mb-4"></p>
+          <button onclick="closeBirthdayModal()" class="bg-blue-500 text-white px-4 py-2 rounded">Cerrar</button>
+        </div>
+      </div>
+
+      <!-- Review Panel -->
+      <div id="reviewPanel" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-4xl w-full mx-4 max-h-96 overflow-y-auto">
+          <h3 class="text-xl font-bold mb-4">Revisar Semanas Anteriores</h3>
+          <div id="reviewContent"></div>
+          <button onclick="closeReviewPanel()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Cerrar</button>
+        </div>
+      </div>
+
+      <!-- Confetti Container -->
+      <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-40"></div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
